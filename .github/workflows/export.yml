@@ -1,0 +1,76 @@
+name: Export field notes
+
+on:
+  schedule:
+    # Daily at 6 AM UTC
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    # Manual run from Actions tab
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # to push updated export
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run export
+        env:
+          MATRIX_HOMESERVER: ${{ secrets.MATRIX_HOMESERVER }}
+          MATRIX_USER: ${{ secrets.MATRIX_USER }}
+          MATRIX_PASSWORD: ${{ secrets.MATRIX_PASSWORD }}
+          MATRIX_ACCESS_TOKEN: ${{ secrets.MATRIX_ACCESS_TOKEN }}
+          MATRIX_ROOM_ID: ${{ secrets.MATRIX_ROOM_ID }}
+          OUTPUT_DIR: .
+        run: python bot.py export
+
+      - name: Validate and exclude flagged items
+        id: validate
+        run: |
+          python validate_export.py || true
+          python -c "
+          import json, os
+          try:
+              r = json.load(open('validation_report.json'))
+              n = r.get('flagged_count', 0)
+          except Exception:
+              n = 0
+          open(os.environ['GITHUB_OUTPUT'], 'a').write(f'flagged={n}\n')
+          "
+
+      - name: Open issue if data issues found
+        if: steps.validate.outputs.flagged != '0'
+        run: |
+          python -c "
+          import json
+          r = json.load(open('validation_report.json'))
+          if r.get('flagged_count', 0) == 0:
+            exit(0)
+          lines = ['## Field notes export – data issues flagged', '',
+                   str(r['flagged_count']) + ' item(s) were excluded from the export.', '',
+                   '| ID | Type | Issues | Preview |', '|----|------|--------|---------|']
+          for f in r.get('flagged', []):
+            pid = f['id'][:35] + '...' if len(f['id']) > 35 else f['id']
+            prev = (f['body_preview'][:55] + '...').replace('|', '&#124;') if f['body_preview'] else ''
+            lines.append(f\"| \`{pid}\` | {f['type']} | {', '.join(f['issues'])} | {prev} |\")
+          lines.extend(['', '**Action:** Review in Matrix and fix, then re-run export.'])
+          open('issue_body.md', 'w').write('\n'.join(lines))
+          "
+          gh issue create --title "Field notes: data issues excluded from export" --body-file issue_body.md 2>/dev/null || true
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add content.json
+          git diff --staged --quiet || git commit -m "chore: update content.json"
+          git push

@@ -1,0 +1,6 @@
+.env
+.matrix_store/
+export.json
+validation_report.json
+__pycache__/
+*.pyc
