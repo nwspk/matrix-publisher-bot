@@ -13,11 +13,23 @@ A template for Newspeak House fellows to publish field notes from a Matrix chann
 
 ## Getting started
 
-### 1. Create your repo
+### 1. Create the Matrix bot
+
+Create a dedicated Matrix account for the bot (e.g. `@yourname-field-notes:matrix.campaignlab.uk`):
+
+1. **Register** — Log into your homeserver (e.g. [Element](https://app.element.io) for matrix.campaignlab.uk) and create a new account, or ask an admin to create one for you.
+2. **Invite the bot to your room** — The bot can only read rooms it's a member of. From your field-notes channel, invite the bot user (or have a room admin do it).
+3. **Choose auth method:**
+   - **Password** — Easiest for GitHub Actions. Use the bot's login password.
+   - **Access token** — In Element: All settings → Help & about → Access token. Copy the token (starts with `syt_`). Use this instead of a password if you prefer not to store the password in secrets.
+
+4. **Get the room ID** — In Element: click the room name → "Room info" (or "View room address"). Use the room ID (`!abc123:server`) or alias (`#field-notes:server`).
+
+### 2. Create your repo
 
 Click **"Use this template"** on GitHub to create your own copy (e.g. `nwspk/yourname-field-notes`).
 
-### 2. Add repo secrets
+### 3. Add repo secrets
 
 Go to Settings > Secrets and variables > Actions and add:
 
@@ -35,7 +47,7 @@ Go to Settings > Secrets and variables > Actions and add:
 
 The `SITE_REPO` and `SITE_DEPLOY_TOKEN` secrets are optional -- when set, the workflow will trigger a rebuild of the fellowship site after each export so your new posts appear automatically.
 
-### 3. Run the export
+### 4. Run the export
 
 The workflow runs **daily at 6 AM UTC** and can also be triggered manually from the Actions tab.
 
@@ -47,7 +59,7 @@ cp .env.example .env   # fill in your credentials
 python bot.py export
 ```
 
-### 4. Your data URL
+### 5. Your data URL
 
 Once the first export runs, your `content.json` is available at:
 
