@@ -35,31 +35,48 @@ EMOJI_TO_TYPE = {
 CATEGORY_EMOJIS = list(EMOJI_TO_TYPE.keys())
 
 
+def _clean_text_for_keywords(body: str) -> str:
+    """Strip emoji, URLs, markdown, and metadata so YAKE sees clean prose."""
+    text = body or ""
+    # Remove "originally posted on ..." metadata
+    text = re.sub(r"_?\s*originally posted[^_\n]*_?", "", text, flags=re.I)
+    for emoji in CATEGORY_EMOJIS:
+        text = text.replace(emoji + "\uFE0F", "").replace(emoji, "")
+    text = re.sub(r"https?://[^\s\)\]]+", "", text)
+    text = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", text)  # [text](url) → text
+    text = re.sub(r"[#*_`~>|]", " ", text)  # strip markdown punctuation
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
 def extract_keywords(body: str) -> list:
     """
-    Extract keywords for sorting. Supports:
-    - keywords: ai, governance, research (comma-separated)
-    - #tag1 #tag2
-    - **bold** phrases (auto-extract)
+    Auto-extract keywords from post text using YAKE + hashtags.
+    Falls back to hashtag-only extraction if YAKE is unavailable.
     """
     keywords = []
     body = body or ""
 
-    # Explicit keywords line
-    m = re.search(r"keywords?\s*:\s*([^\n#]+)", body, re.I)
-    if m:
-        keywords.extend([w.strip().lower() for w in m.group(1).split(",") if w.strip()])
+    # Explicit #hashtags (always honoured — they're intentional)
+    hashtags = re.findall(r"#(\w[\w\-]*)", body)
+    keywords.extend(hashtags)
 
-    # Hashtags
-    keywords.extend(re.findall(r"#(\w[\w\-]*)", body))
+    # Auto-extract with YAKE
+    clean = _clean_text_for_keywords(body)
+    if len(clean) > 30:  # skip very short posts — not enough signal
+        try:
+            import yake
+            extractor = yake.KeywordExtractor(
+                lan="en", n=3, top=10, dedupLim=0.5,
+            )
+            for phrase, _score in extractor.extract_keywords(clean):
+                phrase = phrase.strip()
+                if phrase.lower() not in [k.lower() for k in keywords]:
+                    keywords.append(phrase)
+        except ImportError:
+            pass  # YAKE not installed — hashtags only
 
-    # **Bold** phrases (2–4 words)
-    for m in re.finditer(r"\*\*([^*]+)\*\*", body):
-        phrase = m.group(1).strip()
-        if 2 <= len(phrase.split()) <= 4 and phrase.lower() not in [k.lower() for k in keywords]:
-            keywords.append(phrase)
-
-    return list(dict.fromkeys(keywords))[:15]  # Dedupe, limit 15
+    return list(dict.fromkeys(keywords))[:10]  # Dedupe, limit 10
 
 
 def get_message_content(msg: dict) -> tuple[str, str]:

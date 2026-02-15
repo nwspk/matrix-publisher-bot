@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write  # to push updated export
+      issues: write    # to open issues for flagged items
     steps:
       - uses: actions/checkout@v4
 
@@ -74,3 +75,14 @@ jobs:
           git add content.json
           git diff --staged --quiet || git commit -m "chore: update content.json"
           git push
+
+      - name: Trigger site rebuild
+        if: success()
+        run: |
+          if [ -n "${{ secrets.SITE_REPO }}" ] && [ -n "${{ secrets.SITE_DEPLOY_TOKEN }}" ]; then
+            curl -X POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${{ secrets.SITE_DEPLOY_TOKEN }}" \
+              "https://api.github.com/repos/${{ secrets.SITE_REPO }}/dispatches" \
+              -d '{"event_type":"field-notes-updated"}'
+          fi
