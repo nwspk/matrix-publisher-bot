@@ -55,7 +55,7 @@ Once the first export runs, your `content.json` is available at:
 https://raw.githubusercontent.com/nwspk/yourname-field-notes/main/content.json
 ```
 
-The fellowship site fetches this URL at build time to display your posts.
+The fellowship site fetches this URL at build time to display your posts. See [docs/SITE_INTEGRATION.md](docs/SITE_INTEGRATION.md) for the integration spec (schema, fetch pattern, rendering notes).
 
 ## Channel guidelines
 
