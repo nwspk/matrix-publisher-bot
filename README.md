@@ -69,10 +69,11 @@ Start each post with an emoji so the bot classifies it correctly.
 | 💡 | idea | Ideas, brainstorms |
 | 💾 | project | Tools, apps, projects you're tracking |
 | ❓ | question | Questions to explore |
-| 📄 | blog_post | Finished posts ready to publish |
+| 📄 | blog_post | Link to a published blog post (e.g. Substack) |
 
 - **Links vs journal:** Use 🔗 for bare links. If you add more than a short caption, use 📥.
 - **Journal vs field note:** 📥 for short notes; 📔 for longer reflective pieces.
+- **Blog posts:** Use 📄 with a link to your Substack (or other blog) post.
 
 ### Keywords
 
@@ -85,6 +86,7 @@ Keywords are **auto-extracted** from your post text -- no need to add them manua
 📥 Homework from Matt -- tell me 1 thing from each section
 📔 Field Note: On the legitimacy of the governance module
 💡 An app that forwards newsletters to this channel #automation
+📄 https://yourname.substack.com/p/my-post-title
 ```
 
 ## Output schema
