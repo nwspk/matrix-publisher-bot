@@ -1,5 +1,7 @@
 # Matrix Publisher Bot
 
+🚧 note - still under construction 🚧 
+
 A template for Newspeak House fellows to publish field notes from a Matrix channel to the [fellowship website](https://2025.newspeak.house). Each fellow gets their own repo, their own export, and their own `content.json` that the site pulls in at build time.
 
 ## How it works
